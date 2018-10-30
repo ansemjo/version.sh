@@ -18,8 +18,9 @@ hasval() { expr match "$1" '$Format' == 0 >/dev/null; }
 
 # parse the %D reflist to get tag or branch
 refparse() { REF="$1";
-  tag=$(echo "$REF" | sed -n 's/.*tag: \([^,]*\).*/\1/p'); test -n "$tag" && echo "$tag" && return 0;
-  branch=$(echo "$REF" | sed -n 's/.* -> \([^,]*\).*/\1/p'); test -n "$branch" && echo "$branch" && return 0;
+  tag=$(echo "$REF" | sed -ne 's/.*tag: \([^,]*\).*/\1/p'); test -n "$tag" && echo "$tag" && return 0;
+  branch=$(echo "$REF" | sed -e 's/HEAD -> //' -e 's/, /\
+/' | sed -ne '/^[a-z0-9._-]*$/p' | sed -n '1p'); test -n "$branch" && echo "$branch" && return 0;
   return 1; }
 
 # git functions to return commit and version in repository
