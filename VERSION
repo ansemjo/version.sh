@@ -11,7 +11,7 @@ REVSEP='.r'
 hasval() { expr match "$1" '$Format:' == 0 >/dev/null; }
 
 # parse the tag from reflist
-tagparse() { sed -n 's/.*tag: \([^,]\+\),.*/\1/p'; }
+tagparse() { sed -n 's/.*tag: \([^,]\+\).*/\1/p'; }
 
 # git functions to return hash and version
 hasgit() { test -d .git; }
