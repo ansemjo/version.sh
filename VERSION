@@ -6,8 +6,9 @@ COMMIT='$Format:%H$'
 REFS='$Format:%D$'
 
 # constants
-UNKNOWN() { echo 'unknown'; } # fallback
-REVSEP='.r' # revision seperator
+FALLBACK_VERSION='commit'
+FALLBACK_COMMIT='unknown'
+REVISION='.r'
 
 # check if variable contains a subst value or still has the format string
 hasval() { expr match "$1" '$Format' == 0 >/dev/null; }
@@ -21,19 +22,19 @@ refparse() { REF="$1";
 # git functions to return commit and version in repository
 hasgit() { test -d .git; }
 gitcommit() { hasgit && git describe --always --abbrev=0 --exclude=\* --dirty; }
-gitversion() { hasgit && git describe --always | sed "s/-\([0-9]*\)-g.*/$REVSEP\1/"; }
+gitversion() { hasgit && git describe --always | sed "s/-\([0-9]*\)-g.*/$REVISION\1/"; }
 
 # wrappers
-version() { hasval "$REFS" && refparse "$REFS" || gitversion || UNKNOWN; }
-commit()  { hasval "$COMMIT" && echo "$COMMIT" || gitcommit || UNKNOWN;  }
+version() { hasval "$REFS" && refparse "$REFS" || gitversion || echo "$FALLBACK_VERSION"; }
+commit()  { hasval "$COMMIT" && echo "$COMMIT" || gitcommit || echo "$FALLBACK_COMMIT";  }
 
 # ---------------------------------
 
 case "$1" in
   version) version ;;
   commit)  commit ;;
-  print)
-    printf 'version : %s\ncommit  : %s\n' "$(version)" "$(commit)" ;;
+  help)
+    printf '%s [version|commit]\n' "$0" ;;
   *)
-    printf '%s {version|commit|print}\n' "$0" ;;
+    printf 'version : %s\ncommit  : %s\n' "$(version)" "$(commit)" ;;
 esac
