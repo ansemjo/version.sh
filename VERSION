@@ -22,7 +22,10 @@ refparse() { REF="$1";
 # git functions to return commit and version in repository
 hasgit() { test -d .git; }
 gitcommit() { hasgit && git describe --always --abbrev=0 --exclude=\* --dirty; }
-gitversion() { hasgit && git describe --always | sed "s/-\([0-9]*\)-g.*/$REVISION\1/"; }
+gitversion() { hasgit \
+  && { V=$(git describe --long 2>/dev/null) && echo "$V" | sed "s/-\([0-9]*\)-g.*/$REVISION\1/"; } \
+  || { C=$(git rev-list --count HEAD) && printf '0.0.0%s%s' "$REVISION" "$C"; };
+}
 
 # wrappers
 version() { hasval "$REFS" && refparse "$REFS" || gitversion || echo "$FALLBACK_VERSION"; }
