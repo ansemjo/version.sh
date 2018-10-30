@@ -33,8 +33,10 @@ commit()  { hasval "$COMMIT" && echo "$COMMIT" || gitcommit || echo "$FALLBACK_C
 case "$1" in
   version) version ;;
   commit)  commit ;;
+  describe)
+    printf '%s.g%.7s\n' "$(version)" "$(commit)" ;;
   help)
-    printf '%s [version|commit]\n' "$0" ;;
+    printf '%s [version|commit|describe]\n' "$0" ;;
   *)
     printf 'version : %s\ncommit  : %s\n' "$(version)" "$(commit)" ;;
 esac
