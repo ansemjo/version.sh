@@ -1,29 +1,39 @@
-#!/bin/sh --posix
+#!/bin/sh
 
+# add 'VERSION export-subst' in .gitattributes and
+# these strings will be substituted by git-archive
 COMMIT='$Format:%H$'
 REFS='$Format:%D$'
 
 # constants
-UNKNOWN() { echo 'unknown'; }
-REVSEP='.r'
+UNKNOWN() { echo 'unknown'; } # fallback
+REVSEP='.r' # revision seperator
 
 # check if variable contains a subst value or still has the format string
 hasval() { expr match "$1" '$Format' == 0 >/dev/null; }
 
 # parse the %D reflist to get tag or branch
-refparse() {
-  REF="$1"
+refparse() { REF="$1";
   tag=$(echo "$REF" | sed -n 's/.*tag: \([^,]*\).*/\1/p'); test -n "$tag" && echo "$tag" && return 0;
   branch=$(echo "$REF" | sed -n 's/.* -> \([^,]*\).*/\1/p'); test -n "$branch" && echo "$branch" && return 0;
-  return 1;
-}
+  return 1; }
 
 # git functions to return commit and version in repository
 hasgit() { test -d .git; }
 gitcommit() { hasgit && git describe --always --abbrev=0 --exclude=\* --dirty; }
 gitversion() { hasgit && git describe --always | sed "s/-\([0-9]*\)-g.*/$REVSEP\1/"; }
 
+# wrappers
+version() { hasval "$REFS" && refparse "$REFS" || gitversion || UNKNOWN; }
+commit()  { hasval "$COMMIT" && echo "$COMMIT" || gitcommit || UNKNOWN;  }
+
 # ---------------------------------
 
-printf 'version : %s\n' "$( hasval "$REFS" && refparse "$REFS" || gitversion || UNKNOWN )"
-printf 'commit  : %s\n' "$( hasval "$COMMIT" && echo "$COMMIT" || gitcommit || UNKNOWN )"
+case "$1" in
+  version) version ;;
+  commit)  commit ;;
+  print)
+    printf 'version : %s\ncommit  : %s\n' "$(version)" "$(commit)" ;;
+  *)
+    printf '%s {version|commit|print}\n' "$0" ;;
+esac
