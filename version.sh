@@ -1,5 +1,8 @@
 #!/bin/sh
 
+# Copyright (c) 2018 Anton Semjonov
+# Licensed under the MIT License
+
 # add 'VERSION export-subst' in .gitattributes and
 # these strings will be substituted by git-archive
 COMMIT='$Format:%H$'
