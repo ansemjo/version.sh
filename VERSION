@@ -8,7 +8,7 @@ UNKNOWN() { echo 'unknown'; }
 REVSEP='.r'
 
 # check if variable contains a subst value or still has the format string
-hasval() { expr match "$1" '$Format:' == 0 >/dev/null; }
+hasval() { expr match "$1" '$Format' == 0 >/dev/null; }
 
 # parse the %D reflist to get tag or branch
 refparse() {
