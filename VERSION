@@ -1,3 +1,24 @@
-hash: $Format:%H$
-refs: $Format:%D$
-rsel: $Format:%gd$
+#!/bin/sh --posix
+
+COMMIT='$Format:%H$'
+REFS='$Format:%D$'
+
+# constants
+UNKNOWN='unknown'
+REVSEP='.r'
+
+# check if variable contains format string
+hasval() { expr match "$1" '$Format:' == 0 >/dev/null; }
+
+# parse the tag from reflist
+tagparse() { sed -n 's/.*tag: \([^,]\+\),.*/\1/p'; }
+
+# git functions to return hash and version
+hasgit() { test -d .git; }
+gitcommit() { hasgit && git describe --always --abbrev=0 --exclude=\* --dirty || echo "$UNKNOWN"; }
+gitversion() { hasgit && git describe --always | sed "s/-\([0-9]\+\)-g.*/$REVSEP\1/" || echo "$UNKNOWN"; }
+
+# ---------------------------------
+
+printf 'version : %s\n' "$(hasval "$REFS" && { echo "$REFS" | tagparse; } || gitversion)"
+printf 'commit  : %s\n' "$(hasval "$COMMIT" && echo "$COMMIT" || gitcommit)"
