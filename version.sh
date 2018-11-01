@@ -25,7 +25,7 @@ refparse() { REF="$1";
 
 # git functions to return commit and version in repository
 hasgit() { test -d .git; }
-gitcommit() { hasgit && git describe --always --abbrev=0 --exclude=\* --dirty; }
+gitcommit() { hasgit && git describe --always --abbrev=0 --match '^$' --dirty; }
 gitversion() { hasgit \
   && { V=$(git describe 2>/dev/null) && echo "$V" | sed "s/-\([0-9]*\)-g.*/$REVISION\1/"; } \
   || { C=$(git rev-list --count HEAD) && printf '0.0.0%s%s' "$REVISION" "$C"; };
