@@ -3,6 +3,18 @@
 # Copyright (c) 2018 Anton Semjonov
 # Licensed under the MIT License
 
+#-------------------------------------------#
+#                                           #
+#  This script prints version information   #
+#         when executed in a shell:         #
+#                                           #
+#             sh ./version.sh               #
+#                                           #
+#         For more information see:         #
+#   https://github.com/ansemjo/version.sh   #
+#                                           #
+#-------------------------------------------#
+
 # add 'VERSION export-subst' in .gitattributes and
 # these strings will be substituted by git-archive
 COMMIT='$Format:%H$'
