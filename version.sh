@@ -15,6 +15,9 @@
 #                                           #
 #-------------------------------------------#
 
+# Ignore warnings about necessary single-quotes and literal newlines for POSIX compatability:
+# shellcheck disable=SC2016,SC1004
+
 # add 'VERSION export-subst' in .gitattributes and
 # these strings will be substituted by git-archive
 COMMIT='$Format:%H$'
@@ -26,7 +29,7 @@ FALLBACK_COMMIT='unknown'
 REVISION='.r'
 
 # check if variable contains a subst value or still has the format string
-hasval() { expr match "$1" '$Format' == 0 >/dev/null; }
+hasval() { expr "$1" : '$Format' == 0 >/dev/null; }
 
 # parse the %D reflist to get tag or branch
 refparse() { REF="$1";
@@ -39,7 +42,7 @@ refparse() { REF="$1";
 hasgit() { test -d .git; }
 gitcommit() { hasgit && git describe --always --abbrev=0 --match '^$' --dirty; }
 gitversion() { hasgit \
-  && { V=$(git describe 2>/dev/null) && echo "$V" | sed "s/-\([0-9]*\)-g.*/$REVISION\1/"; } \
+  && { V=$(git describe 2>/dev/null) && echo "$V" | sed 's/-\([0-9]*\)-g.*/'"$REVISION"'\1/'; } \
   || { C=$(git rev-list --count HEAD) && printf '0.0.0%s%s' "$REVISION" "$C"; };
 }
 
