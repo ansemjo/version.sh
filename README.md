@@ -16,6 +16,7 @@ file and using `$Format:__$` strings inside the script.
 
 - If we are working on a cloned repository, those strings will not be substituted, `./.git` will
   exist and the script will attempt to use `git describe ...` commands.
+
 - If you are working on a downloaded copy, which was created with `git archive` (GitHub downloads
   fall into this category), the strings will have been substituted and the script will simply parse
   and echo those - no `git` required.
@@ -30,32 +31,40 @@ issue.
 
 Take this repository as an example:
 
-    $ cd $(mktemp -d)
-    $ git clone https://github.com/ansemjo/version.sh .
-    $ git checkout 0.1.0
-    $ ./version.sh describe
-    0.1.0-gbd4436b
+```
+$ cd $(mktemp -d)
+$ git clone https://github.com/ansemjo/version.sh .
+$ git checkout 0.1.0
+$ ./version.sh describe
+0.1.0-gbd4436b
+```
 
 vs.
 
-    $ cd $(mktemp -d)
-    $ curl -L https://github.com/ansemjo/version.sh/archive/0.1.0.tar.gz | tar xz --strip-components=1
-    $ ./version.sh describe
-    0.1.0-gbd4436b
+```
+$ cd $(mktemp -d)
+$ curl -L https://github.com/ansemjo/version.sh/archive/0.1.0.tar.gz | tar xz --strip-components=1
+$ ./version.sh describe
+0.1.0-gbd4436b
+```
 
 ## installation
 
 Copy `version.sh` to your project directory and add this line to your
 [gitattributes](https://git-scm.com/docs/gitattributes):
 
-    version.sh export-subst
+```
+version.sh export-subst
+```
 
 Or scripted:
 
-    cd path/to/my/project
-    curl -LO https://github.com/ansemjo/version.sh/raw/master/version.sh
-    chmod +x version.sh
-    echo "version.sh export-subst" >> .gitattributes
+```
+cd path/to/my/project
+curl -LO https://github.com/ansemjo/version.sh/raw/master/version.sh
+chmod +x version.sh
+echo "version.sh export-subst" >> .gitattributes
+```
 
 ## sepcial cases
 
@@ -63,12 +72,16 @@ The format strings that can be used with `export-subst` are limited and a few sp
 
 - Downloaded archive, which is neither a tagged release nor a current tip of a branch: `%D` is empty
   and `version` will default to `FALLBACK_VERSION`, which is currently defined as `commit`.
+
 - Downloaded archive, which is not tagged but is the tip of a branch: `%D` will contain something
   like `HEAD -> master` and `version` will be parsed as `master`.
+
 - Cloned repository, a few commits after the last annotated tag: the version string will contain an
   appended `.rX` where `X` is the number of commits after the last tag.
+
 - Cloned repository with no annotated tags: `version` will default to `0.0.0.rX` where `X` is the
   total number of commits.
+
 - Cloned repository with modified but uncommitted files: appended `-dirty` after the commit hash.
 
 All in all, only tagged releases are really consistent between the cloned repository and a
@@ -78,18 +91,20 @@ downloaded archive.
 
 The script has four "commands": nothing/`print`, `version`, `commit`, `describe`
 
-    $ ./version.sh
-    version : 0.1.0
-    commit  : bd4436b39ee1b10eb71046b03b720dc4c3985349-dirty
+```
+$ ./version.sh
+version : 0.1.0
+commit  : bd4436b39ee1b10eb71046b03b720dc4c3985349-dirty
 
-    $ ./version.sh version
-    0.1.0
+$ ./version.sh version
+0.1.0
 
-    $ ./version.sh commit
-    bd4436b39ee1b10eb71046b03b720dc4c3985349-dirty
+$ ./version.sh commit
+bd4436b39ee1b10eb71046b03b720dc4c3985349-dirty
 
-    $ ./version.sh describe
-    0.1.0-gbd4436b
+$ ./version.sh describe
+0.1.0-gbd4436b
+```
 
 Some usage examples with build tools:
 
