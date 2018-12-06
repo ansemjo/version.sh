@@ -91,21 +91,28 @@ downloaded archive.
 
 ## usage
 
-The script has four "commands": nothing/`print`, `version`, `commit`, `describe`
+The script takes the following arguments: nothing/`print`, `version`, `commit`, `describe`, `json`
 
 ```
-$ ./version.sh
-version : 0.1.0
-commit  : bd4436b39ee1b10eb71046b03b720dc4c3985349-dirty
+$ sh version.sh
+version : 0.1.1.r6
+commit  : d2dcc2b48f4a3993eea1bbbd4e0419825c2b5875-dirty
 
-$ ./version.sh version
-0.1.0
+$ sh version.sh version
+0.1.1.r6
 
-$ ./version.sh commit
-bd4436b39ee1b10eb71046b03b720dc4c3985349-dirty
+$ sh version.sh commit
+d2dcc2b48f4a3993eea1bbbd4e0419825c2b5875-dirty
 
-$ ./version.sh describe
-0.1.0-gbd4436b
+$ sh version.sh describe
+0.1.1.r6-gd2dcc2b
+
+$ sh version.sh json
+{
+  "version": "0.1.1.r6",
+  "commit": "d2dcc2b48f4a3993eea1bbbd4e0419825c2b5875-dirty",
+  "describe":"0.1.1.r6-gd2dcc2b"
+}
 ```
 
 Some usage examples with build tools:

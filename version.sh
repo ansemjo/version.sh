@@ -49,16 +49,18 @@ gitversion() { hasgit \
 # wrappers
 version() { hasval "$REFS" && refparse "$REFS" || gitversion || echo "$FALLBACK_VERSION"; }
 commit()  { hasval "$COMMIT" && echo "$COMMIT" || gitcommit || echo "$FALLBACK_COMMIT";  }
+describe() { printf '%s-g%.7s\n' "$(version)" "$(commit)"; }
 
 # ---------------------------------
 
 case "$1" in
-  version) version ;;
-  commit)  commit ;;
-  describe)
-    printf '%s-g%.7s\n' "$(version)" "$(commit)" ;;
+  version)  version ;;
+  commit)   commit ;;
+  describe) describe ;;
+  json)
+    printf '{\n  "version": "%s",\n  "commit": "%s",\n  "describe":"%s"\n}\n' "$(version)" "$(commit)" "$(describe)" ;;
   help)
-    printf '%s [version|commit|describe]\n' "$0" ;;
+    printf '%s [version|commit|describe|json]\n' "$0" ;;
   *)
     printf 'version : %s\ncommit  : %s\n' "$(version)" "$(commit)" ;;
 esac
