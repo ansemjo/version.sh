@@ -139,6 +139,30 @@ hello: hello.c
 	gcc $(CFLAGS) $< -o $@
 ```
 
+### autotools
+
+```
+...
+AC_INIT([myprogram], [m4_esyscmd_s([sh version.sh version])])
+AC_CONFIG_HEADERS([config.h])
+AC_DEFINE_UNQUOTED([COMMIT], "`sh version.sh commit`", "Git commit from which we build")
+...
+```
+
+Running `autoreconf && ./configure` will add to `config.h`:
+
+```h
+...
+
+/* Version number of package */
+#define VERSION "*****"
+
+/* "Git commit from which we build" */
+#define COMMIT "****************************************"
+
+...
+```
+
 ### setuptools + Python
 
 ```python
