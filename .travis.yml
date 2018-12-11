@@ -1,4 +1,4 @@
-language: minimal
+language: shell
 dist: xenial
 
 env:
@@ -19,14 +19,16 @@ install:
   - git tag -a $TRAVIS_JOB_ID -m Travis
 
 script:
-  # check commands in git repository
-  - $SH ./version.sh
-  - $SH ./version.sh version
-  - $SH ./version.sh commit
-  - $SH ./version.sh describe
+  # check that commands in git repository return expected results
+  - $SH -c 'echo running in $0'
   - $SH ./version.sh json
-  # work from a source tarball
+  - test $($SH ./version.sh version) == $TRAVIS_JOB_ID
+  - test $($SH ./version.sh commit) == $(git rev-parse HEAD)
+  # work from a source tarball and check that it produces identical output
   - cd $(mktemp -d)
   - git -C $TRAVIS_BUILD_DIR archive HEAD | tar xv
-  # check that it produces identical output
   - test "$($SH ./version.sh json)" == "$(cd $TRAVIS_BUILD_DIR && $SH ./version.sh json)"
+  # back to repository and add a commit
+  - cd $TRAVIS_BUILD_DIR
+  - git commit --allow-empty -m 'edit'
+  - test $($SH ./version.sh describe) == $(git describe)
