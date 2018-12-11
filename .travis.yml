@@ -1,0 +1,32 @@
+language: minimal
+dist: xenial
+
+env:
+  # shells to test
+  - SH=ash
+  - SH=bash
+  - SH=dash
+  - SH=ksh
+
+install:
+  # install shell
+  - sudo apt-get update -qq
+  - sudo apt-get install -qq $SH
+  # add tag to simulate release
+  - echo 'version.sh export-subst' > .gitattributes
+  - git add .gitattributes
+  - git commit -m Travis
+  - git tag -a $TRAVIS_JOB_ID -m Travis
+
+script:
+  # check commands in git repository
+  - $SH ./version.sh
+  - $SH ./version.sh version
+  - $SH ./version.sh commit
+  - $SH ./version.sh describe
+  - $SH ./version.sh json
+  # work from a source tarball
+  - cd $(mktemp -d)
+  - git -C $TRAVIS_BUILD_DIR archive HEAD | tar xv
+  # check that it produces identical output
+  - test "$($SH ./version.sh json)" == "$(cd $TRAVIS_BUILD_DIR && $SH ./version.sh json)"
