@@ -30,7 +30,7 @@ FALLBACK_VERSION='commit'
 FALLBACK_COMMIT='unknown'
 
 # Revision seperator in 'describe' string
-REVISION='.r'
+REVISION='-'
 
 # check if variable contains a subst value or still has the format string
 hasval() { expr "$1" : '$Format' == 0 >/dev/null; }
