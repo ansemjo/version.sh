@@ -7,8 +7,8 @@
 builds from git repositories and archives.
 
 Specifically, it attempts to produce the same strings whether you are building from a checked-out
-tag of a cloned repository or a downloaded archive of that same tag. This problem is described a
-little further in
+tag of a cloned repository or a downloaded archive of that same tag when running `sh ./version.sh`.
+This problem is described a little further in
 [this blog post](https://semjonov.de/post/2018-10/commit-hash-replacement-in-git-archives/). In
 short: you don't have the `.git` directory in downloaded archives and therefore cannot retrieve any
 version information with `git`. Furthermore you might not want to require `git` when building your
@@ -25,69 +25,45 @@ file and using `$Format:__$` strings inside the script.
   and echo those - no `git` required.
 
 I tried to stay POSIX compliant, so you should be able to execute the script with any `sh`
-implementation, given that external commands like `expr`, `sed`, `test` and `printf` are available.
-This also means that build tools like `make` or Python's `setuptools` should trivially be able to
-use `version.sh`'s output during builds. If you find a shell where it does not work, please open an
+implementation, given that external commands like `sed`, `test` and `printf` are available. This
+also means that build tools like `make` or Python's `setuptools` should trivially be able to use
+`version.sh`'s output during builds. If you find a shell where it does not work, please open an
 issue.
-
-## example
-
-Take this repository as an example:
-
-```
-$ cd $(mktemp -d)
-$ git clone https://github.com/ansemjo/version.sh .
-$ git checkout 0.1.0
-$ ./version.sh describe
-0.1.0-gbd4436b
-```
-
-vs.
-
-```
-$ cd $(mktemp -d)
-$ curl -L https://github.com/ansemjo/version.sh/archive/0.1.0.tar.gz | tar xz --strip-components=1
-$ ./version.sh describe
-0.1.0-gbd4436b
-```
 
 ## installation
 
-Copy `version.sh` to your project directory and add this line to your
-[gitattributes](https://git-scm.com/docs/gitattributes):
+Copy `version.sh` to your project directory and add the following line to your
+[`.gitattributes`](https://git-scm.com/docs/gitattributes). _Note:_ the substitution will only work
+once you have committed both files.
 
 ```
 version.sh export-subst
 ```
 
-Or scripted:
+Or scripted, for copy-pasting:
 
 ```
-cd path/to/my/project
+cd path/to/your/project
 curl -LO https://github.com/ansemjo/version.sh/raw/master/version.sh
-chmod +x version.sh
-echo "version.sh export-subst" >> .gitattributes
+echo 'version.sh export-subst' >> .gitattributes
+git add version.sh .gitattributes
+git commit -m 'add version.sh script'
 ```
 
 ## sepcial cases
 
-The format strings that can be used with `export-subst` are limited and a few special cases arise:
+The format strings that can be used with `export-subst` are limited and on the other hand a cloned
+repository allows for some more specific information. Thus a few special cases arise:
 
-- Downloaded archive, which is neither a tagged release nor a current tip of a branch: `%D` is empty
-  and `version` will default to `FALLBACK_VERSION`, which is currently defined as `commit`.
+| type       | condition                                                            | effect                                                                                                             |
+| ---------- | -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| archive    | not a tagged release, but is a tip of a branch, e.g. `master.tar.gz` | `$REFS` will contain something like `HEAD -> master` and version will be parsed as `master` in this case           |
+| archive    | neither a tagged release nor a current tip of a branch               | `$REFS` is empty and version will default to `FALLBACK_VERSION`, which is currently defined as the string `commit` |
+| repository | modified but uncommitted files present                               | appended `-dirty` after the commit hash                                                                            |
+| repository | `HEAD` is a few commits after the last annotated tag                 | the version string will contain an appended `-X` where `X` is the number of commits after the last tag             |
+| repository | no annotated tags in history                                         | version will default to `0.0.0-X` where `X` is the total number of commits                                         |
 
-- Downloaded archive, which is not tagged but is the tip of a branch: `%D` will contain something
-  like `HEAD -> master` and `version` will be parsed as `master`.
-
-- Cloned repository, a few commits after the last annotated tag: the version string will contain an
-  appended `.rX` where `X` is the number of commits after the last tag.
-
-- Cloned repository with no annotated tags: `version` will default to `0.0.0.rX` where `X` is the
-  total number of commits.
-
-- Cloned repository with modified but uncommitted files: appended `-dirty` after the commit hash.
-
-All in all, only tagged releases are really consistent between the cloned repository and a
+All in all, only annotated tags / releases are really consistent between the cloned repository and a
 downloaded archive.
 
 ## usage
@@ -96,27 +72,27 @@ The script takes the following arguments: nothing/`print`, `version`, `commit`, 
 
 ```
 $ sh version.sh
-version : 0.1.1.r6
+version : 0.1.1-6
 commit  : d2dcc2b48f4a3993eea1bbbd4e0419825c2b5875-dirty
 
 $ sh version.sh version
-0.1.1.r6
+0.1.1-6
 
 $ sh version.sh commit
 d2dcc2b48f4a3993eea1bbbd4e0419825c2b5875-dirty
 
 $ sh version.sh describe
-0.1.1.r6-gd2dcc2b
+0.1.1-6-gd2dcc2b
 
 $ sh version.sh json
 {
-  "version": "0.1.1.r6",
+  "version": "0.1.1-6",
   "commit": "d2dcc2b48f4a3993eea1bbbd4e0419825c2b5875-dirty",
-  "describe":"0.1.1.r6-gd2dcc2b"
+  "describe":"0.1.1-6-gd2dcc2b"
 }
 ```
 
-Some usage examples with build tools:
+Some usage examples with common build tools:
 
 ### make + C
 
