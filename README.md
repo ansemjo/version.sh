@@ -1,6 +1,7 @@
 # version.sh
 
 [![CodeFactor](https://www.codefactor.io/repository/github/ansemjo/version.sh/badge)](https://www.codefactor.io/repository/github/ansemjo/version.sh)
+[![Travis](https://travis-ci.com/ansemjo/version.sh.svg?branch=master)](https://travis-ci.com/ansemjo/version.sh)
 
 `version.sh` is a script to output somewhat normalized version strings for embedding during software
 builds from git repositories and archives.
