@@ -29,6 +29,7 @@ install:
   - git tag -a $TRAVIS_JOB_ID -m Travis
 
 script:
+  - set +x
   # check that commands in git repository return expected results
   - $SH -c 'echo running in $0'
   - $SH ./version.sh json
@@ -37,6 +38,7 @@ script:
   # work from a source tarball and check that it produces identical output
   - cd $(mktemp -d)
   - git -C $TRAVIS_BUILD_DIR archive HEAD | tar xv
+  - $SH ./version.sh json
   - test "$($SH ./version.sh json)" == "$(cd $TRAVIS_BUILD_DIR && $SH ./version.sh json)"
   # back to repository and add a commit
   - cd $TRAVIS_BUILD_DIR

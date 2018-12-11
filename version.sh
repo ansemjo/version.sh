@@ -33,7 +33,7 @@ FALLBACK_COMMIT='unknown'
 REVISION='-'
 
 # check if variable contains a subst value or still has the format string
-hasval() { test -n "${1##\$Format:*}"; }
+hasval() { test -n "${1##\$Format*}"; }
 
 # parse the %D reflist to get tag or branch
 refparse() { REF="$1";
