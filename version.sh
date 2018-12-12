@@ -43,7 +43,7 @@ refparse() { REF="$1";
   return 1; }
 
 # git functions to return commit and version in repository
-hasgit() { test -d .git; }
+hasgit() { test -r .git; }
 gitcommit() { hasgit && git describe --always --abbrev=0 --match '^$' --dirty; }
 gitversion() { hasgit \
   && { V=$(git describe 2>/dev/null) && echo "$V" | sed 's/-\([0-9]*\)-g.*/'"$REVISION"'\1/'; } \
