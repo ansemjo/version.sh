@@ -22,6 +22,8 @@
 
 # Add the following line in .gitattributes so these strings are substituted by git-archive:
 #   version.sh export-subst
+
+
 COMMIT='$Format:%H$'
 REFS='$Format:%D$'
 
@@ -30,30 +32,35 @@ FALLBACK_VERSION='commit'
 FALLBACK_COMMIT='unknown'
 
 # Revision seperator in 'describe' string
-REVISION='-'
+REVISION_SEPERATOR="${REVISION_SEPERATOR:--}"
+COMMIT_SEPERATOR="${COMMIT_SEPERATOR:--g}"
 
-# check if variable contains a subst value or still has the format string
+# check if variable contains a substituted value or still has the format string
 hasval() { test -n "${1##\$Format*}"; }
 
-# parse the %D reflist to get tag or branch
-refparse() { REF="$1";
-  tag=$(echo "$REF" | sed -ne 's/.*tag: \([^,]*\).*/\1/p'); test -n "$tag" && echo "$tag" && return 0;
+# parse the %D reflist to get a tag or branch name
+refparse() {
+  REF="$1"
+  tag=$(echo "$REF" | sed -ne 's/.*tag: \([^,]*\).*/\1/p');
+    test -n "$tag" && echo "$tag" && return 0;
   branch=$(echo "$REF" | sed -e 's/HEAD -> //' -e 's/, /\
-/' | sed -ne '/^[a-z0-9._-]*$/p' | sed -n '1p'); test -n "$branch" && echo "$branch" && return 0;
-  return 1; }
+/' | sed -ne '/^[a-z0-9._-]*$/p' | sed -n '1p');
+    test -n "$branch" && echo "$branch" && return 0;
+  return 1;
+}
 
 # git functions to return commit and version in repository
 hasgit() { test -r .git || git rev-parse 2>/dev/null; }
 gitcommit() { hasgit && git describe --always --abbrev=0 --match '^$' --dirty; }
 gitversion() { hasgit \
-  && { V=$(git describe 2>/dev/null) && echo "$V" | sed 's/-\([0-9]*\)-g.*/'"$REVISION"'\1/'; } \
-  || { C=$(git rev-list --count HEAD) && printf '0.0.0%s%s' "$REVISION" "$C"; };
+  && { V=$(git describe 2>/dev/null) && echo "$V" | sed 's/-\([0-9]*\)-g.*/'"$REVISION_SEPERATOR"'\1/'; } \
+  || { C=$(git rev-list --count HEAD) && printf '0.0.0%s%s' "$REVISION_SEPERATOR" "$C"; };
 }
 
 # wrappers
 version() { hasval "$REFS" && refparse "$REFS" || gitversion || echo "$FALLBACK_VERSION"; }
 commit()  { hasval "$COMMIT" && echo "$COMMIT" || gitcommit || echo "$FALLBACK_COMMIT";  }
-describe() { printf '%s-g%.7s\n' "$(version)" "$(commit)"; }
+describe() { printf '%s%s%.7s\n' "$(version)" "$COMMIT_SEPERATOR" "$(commit)"; }
 
 # ---------------------------------
 
