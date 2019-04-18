@@ -19,8 +19,8 @@ etc. But then you need a seperate workflow for updating e.g. a `VERSION` file an
 in your repository ..
 
 This can be solved by adding an entry like `VERSION export-subst` to the project's `.gitattributes`
-file and using `$Format:__$` strings that will be substituted upon archive creation. The script goes
-a step further still:
+file and using [`$Format:__$` strings](https://git-scm.com/docs/gitattributes#_creating_an_archive)
+that will be substituted upon archive creation. The script goes a step further still:
 
 - If we are working on a cloned repository, those strings will not be substituted but `./.git` will
   exist and the script will attempt to use `git describe ...` commands.
