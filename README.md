@@ -165,7 +165,7 @@ from os import environ
 from subprocess import check_output
 from setuptools import setup, find_packages
 
-environ['REVISION_SEPERATOR'] = '.dev' # PEP 440 compatability
+environ['REVISION_SEPERATOR'] = '.post' # PEP 440 compatability
 version = check_output(['sh', 'version.sh', 'version']).strip().decode()
 
 setup(
