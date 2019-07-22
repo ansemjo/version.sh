@@ -54,7 +54,7 @@ refparse() {
 
 # Try to get commit and version information with git:
 gitcommit() {
-  hasgit && git describe --always --abbrev=0 --match '^$' --dirty;
+  hasgit && git describe --always --abbrev=0 --match '^$' --dirty 2>/dev/null;
 }
 gitversion() {
   hasgit && {
@@ -64,7 +64,7 @@ gitversion() {
       echo "$V" | sed 's/-\([0-9]*\)-g.*/'"$REVISION_SEPERATOR"'\1/';
     } || {
       # or count the number of commits otherwise:
-      C=$(git rev-list --count HEAD) && \
+      C=$(git rev-list --count HEAD 2>/dev/null) && \
       printf '0.0.0%s%s' "$REVISION_SEPERATOR" "$C";
     };
   };
