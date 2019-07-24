@@ -30,6 +30,7 @@ FALLBACK_COMMIT='unknown'
 # Revision and commit hash seperators in 'describe' string:
 REVISION_SEPERATOR="${REVISION_SEPERATOR:--}"
 COMMIT_SEPERATOR="${COMMIT_SEPERATOR:--g}"
+GIT_DIRTY_MARKER="${GIT_DIRTY_MARKER:--dirty}"
 
 # Check if variables contain substituted values?
 subst() { test -n "${COMMIT##\$Format*}" && test -n "${REFS##\$Format*}"; }
@@ -54,7 +55,7 @@ refparse() {
 
 # Try to get commit and version information with git:
 gitcommit() {
-  hasgit && git describe --always --abbrev=0 --match '^$' --dirty 2>/dev/null;
+  hasgit && git describe --always --abbrev=0 --match '^$' 2>/dev/null;
 }
 gitversion() {
   hasgit && {
@@ -69,11 +70,16 @@ gitversion() {
     };
   };
 }
+gitdirty() {
+  if ! subst && hasgit; then
+    git diff --no-ext-diff --quiet --exit-code || echo "$GIT_DIRTY_MARKER";
+  fi
+}
 
 # Wrappers to return version and commit (substituted -> git info -> fallback):
 version() { subst && refparse || gitversion || echo "$FALLBACK_VERSION"; }
 commit()  { subst && echo "$COMMIT" || gitcommit || echo "$FALLBACK_COMMIT"; }
-describe() { printf '%s%s%.7s\n' "$(version)" "$COMMIT_SEPERATOR" "$(commit)"; }
+describe() { printf '%s%s%.7s%s\n' "$(version)" "$COMMIT_SEPERATOR" "$(commit)" "$(gitdirty)"; }
 
 # Parse commandline argument:
 case "$1" in
