@@ -90,7 +90,11 @@ case "$1" in
     printf '{"version":"%s","commit":"%s","describe":"%s"}\n' \
       "$(version)" "$(commit)" "$(describe)" ;;
   help)
-    printf '%s [version|commit|describe|json]\n' "$0" ;;
+    printf '%s [version|commit|describe|json|env]\n' "$0" ;;
+  env)
+    printf 'VERSION=%q\nCOMMIT=%q\nDESCRIBE=%q\n' \
+      "$(version)" "$(commit)" "$(describe)" ;;
   *)
-    printf 'version : %s\ncommit  : %s\n' "$(version)" "$(commit)" ;;
+    printf 'version  : %s\ncommit   : %s\ndescribe : %s\n' \
+      "$(version)" "$(commit)" "$(describe)" ;;
 esac
