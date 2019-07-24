@@ -41,4 +41,7 @@ script:
   # back to repository and add a commit
   - cd $TRAVIS_BUILD_DIR
   - git commit --allow-empty -m 'edit'
-  - test $($SH ./version.sh describe) == $(git describe)
+  - test $($SH ./version.sh describe) == $(git describe --dirty)
+  # check dirty output
+  - echo "# dirty" >> version.sh
+  - test $(GIT_DIRTY_MARKER=M $SH ./version.sh describe) == $(git describe --dirty=M)
