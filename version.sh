@@ -28,9 +28,9 @@ FALLBACK_VERSION='commit'
 FALLBACK_COMMIT='unknown'
 
 # Revision and commit hash seperators in 'describe' string:
-REVISION_SEPERATOR="${REVISION_SEPERATOR:--}"
-COMMIT_SEPERATOR="${COMMIT_SEPERATOR:--g}"
-GIT_DIRTY_MARKER="${GIT_DIRTY_MARKER:--dirty}"
+REVISION_SEPERATOR="${REVISION_SEPERATOR--}"
+COMMIT_SEPERATOR="${COMMIT_SEPERATOR--g}"
+GIT_DIRTY_MARKER="${GIT_DIRTY_MARKER--dirty}"
 
 # Check if variables contain substituted values?
 subst() { test -n "${COMMIT##\$Format*}" && test -n "${REFS##\$Format*}"; }
