@@ -3,8 +3,18 @@ name: ci
 on: [ push ]
 
 jobs:
-  correctness:
 
+  # check the quality of the script
+  shellcheck:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Run ShellCheck
+        uses: ludeeus/action-shellcheck@1.1.0
+
+  # check correctness with some shells
+  correctness:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -19,7 +29,6 @@ jobs:
             sh: bash
           - os: macos-latest
             sh: ksh
-
     steps:
 
       - name: Install ksh
@@ -31,7 +40,7 @@ jobs:
           esac
 
       - name: Checkout
-        uses: actions/checkout@v2.3.4
+        uses: actions/checkout@v2
 
       - name: Prepare dummy release
         run: |
