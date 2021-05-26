@@ -1,0 +1,66 @@
+name: ci
+
+on: [ push ]
+
+jobs:
+  correctness:
+
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            sh: bash
+          - os: ubuntu-latest
+            sh: dash
+          - os: ubuntu-latest
+            sh: ksh
+          - os: macos-latest
+            sh: bash
+          - os: macos-latest
+            sh: ksh
+
+    steps:
+
+      - name: Install ksh
+        if: ${{ matrix.sh == 'ksh' }}
+        run: |
+          case ${{ matrix.os }} in
+            macos-latest) brew install ksh ;;
+            ubuntu-latest) sudo apt install ksh ;;
+          esac
+
+      - name: Checkout
+        uses: actions/checkout@v2.3.4
+
+      - name: Prepare dummy release
+        run: |
+          echo 'version.sh export-subst' > .gitattributes
+          git config --global user.name "GitHub Action"
+          git config --global user.email "runner@$HOSTNAME"
+          git add .gitattributes
+          git commit -m 'ci'
+          echo git tag -a ci-${{ github.run_id }} -m 'ci'
+          git tag -a ci-${{ github.run_id }} -m 'ci'
+
+      - name: Test correctness
+        env:
+          SH: ${{ matrix.sh }}
+        run: |
+          # check that commands in git repository return expected results
+          set -x
+          $SH ./version.sh json
+          test $($SH ./version.sh version) == ci-${{ github.run_id }}
+          test $($SH ./version.sh commit) == $(git rev-parse HEAD)
+          # work from a source tarball and check that it produces identical output
+          cd $(mktemp -d)
+          git -C $GITHUB_WORKSPACE archive HEAD | tar xv
+          test "$($SH ./version.sh json)" == "$(cd $GITHUB_WORKSPACE && $SH ./version.sh json)"
+          # back to repository and add a commit
+          cd $GITHUB_WORKSPACE
+          git commit --allow-empty -m 'edit'
+          test $($SH ./version.sh describe) == $(git describe --dirty)
+          # check dirty output
+          echo "# dirty" >> version.sh
+          test $(GIT_DIRTY_MARKER=M $SH ./version.sh describe) == $(git describe --dirty=M)
+
