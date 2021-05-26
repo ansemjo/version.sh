@@ -1,7 +1,6 @@
 # version.sh
 
-[![CodeFactor](https://www.codefactor.io/repository/github/ansemjo/version.sh/badge)](https://www.codefactor.io/repository/github/ansemjo/version.sh)
-[![Travis](https://travis-ci.com/ansemjo/version.sh.svg?branch=master)](https://travis-ci.com/ansemjo/version.sh)
+![GitHub Workflow](https://github.com/ansemjo/version.sh/actions/workflows/ci.yml/badge.svg)
 
 `version.sh` is a script to output normalized version strings of projects tracked with Git for usage
 during software builds. Specifically, it aims to produce the same strings whether you are building
@@ -33,8 +32,8 @@ I tried to stay POSIX compliant and portable, so you should be able to execute t
 shell implementation, given that commands like `sed`, `test` and `printf` are available. This also
 means that build tools like `make` or Python's `setuptools` should trivially be able to use
 `version.sh`'s output during builds. If you find a shell where it does not work, please open an
-issue. Travis [currently tests](https://travis-ci.com/ansemjo/version.sh) `bash`, `dash` and `ksh`
-on Linux and OSX.
+issue. The workflow [currently tests](https://github.com/ansemjo/version.sh/actions/workflows/ci.yml)
+`bash`, `dash` and `ksh` on Linux and OSX.
 
 ## INSTALLATION
 
