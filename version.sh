@@ -89,11 +89,12 @@ case "$1" in
   json)
     printf '{"version":"%s","commit":"%s","describe":"%s"}\n' \
       "$(version)" "$(commit)" "$(describe)" ;;
+  env)
+    esc() { printf "%s" "$1" | sed "s/'/'\\\\''/g"; }
+    printf "VERSION='%s'\nCOMMIT='%s'\nDESCRIBE='%s'\n" \
+      "$(esc "$(version)")" "$(esc "$(commit)")" "$(esc "$(describe)")" ;;
   help)
     printf '%s [version|commit|describe|json|env]\n' "$0" ;;
-  env)
-    printf 'VERSION=%q\nCOMMIT=%q\nDESCRIBE=%q\n' \
-      "$(version)" "$(commit)" "$(describe)" ;;
   *)
     printf 'version  : %s\ncommit   : %s\ndescribe : %s\n' \
       "$(version)" "$(commit)" "$(describe)" ;;
