@@ -10,7 +10,7 @@ from a checked-out tag of a cloned repository or a downloaded archive of that sa
 
 Git 2.32 has [learned a new trick](https://raw.githubusercontent.com/git/git/master/Documentation/RelNotes/2.32.0.txt):
 thanks to [Eli Schwartz and René Scharfe](https://www.spinics.net/lists/git/msg398884.html), the `git log --format=...`
-(and as such also the `export-subst` attribute) now handles `$(describe)` placeholders! This means all of the things
+(and as such also the `export-subst` attribute) now handles `%(describe)` placeholders! This means all of the things
 below can now be applied to archives of a commit that are *not* exactly a release! Implementation in this script TBA.
 
 ## THE PROBLEM
