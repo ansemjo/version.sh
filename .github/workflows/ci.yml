@@ -59,6 +59,7 @@ jobs:
           # check that commands in git repository return expected results
           set -x
           $SH ./version.sh json
+          export ALWAYS_LONG_VERSION=n
           test $($SH ./version.sh version) == ci-${{ github.run_id }}
           test $($SH ./version.sh commit) == $(git rev-parse HEAD)
           # work from a source tarball and check that it produces identical output
