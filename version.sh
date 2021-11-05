@@ -24,20 +24,29 @@ DIRTY_MARKER="${DIRTY_MARKER--dirty}"
 if test '$Format:%%$' = '%'; then
   # running from exported archive with replaced values
 
-  hash='$Format:%H$'
+  longhash='$Format:%H$'
+  hash=$(echo "$longhash" | head -c7)
   refs='$Format:%D$'
-  # parse the reflist in %D to get a tag and/or branch name
-  #! this will NOT pick up valid local branch names with '/' in them
-  version=$(echo "${refs}" | sed -ne 's/.*tag: \([^,]*\).*/\1/p')
-  branch=$(echo "${refs}" | sed -E -ne 's/(HEAD -> |,)//' -e 's/^(.* )?([a-z0-9._-][a-z0-9._-]*)( .*)?$/\2/p')
+  desc='$Format:%(describe:exclude=*-[0-9]*-g[0-9a-f]*)$'
   dirty=''
 
+  if test "$(printf '%s' "$desc" | head -c11)" != "%(describe:"; then
+    # use desc if the git was modern enough
+    version="${desc}"
+  else
+    # otherwise parse the reflist in %D to hopefully get tag and branch names
+    #! this will NOT pick up valid local branch names with '/' in them
+    version=$(echo "${refs}" | sed -ne 's/.*tag: \([^,]*\).*/\1/p')
+    branch=$(echo "${refs}" | sed -E -ne 's/(HEAD -> |,)//' -e 's/^(.* )?([a-z0-9._-][a-z0-9._-]*)( .*)?$/\2/p')
+  fi
+
 else
-  # otherwise hopefully a live git repo
+  # otherwise hopefully in a checked-out git repo
 
   git rev-parse >/dev/null || exit 1
-  hash=$(git log -1 --pretty='%H') || exit 1
-  version=$(git describe)
+  longhash=$(git log -1 --pretty='%H') || exit 1
+  hash=$(echo "$longhash" | head -c7)
+  version=$(git describe --exclude='*-[0-9]*-g[0-9a-f]*')
   branch=$(git rev-parse --abbrev-ref HEAD)
   dirty=$(git diff-index --quiet HEAD -- || printf '%s' "${DIRTY_MARKER}")
 
@@ -50,17 +59,17 @@ if test -z "${version}"; then
 
   if test -z "${branch}" || test "${branch}" = 'HEAD'; then
     # if not a branch tip, use only hash
-    version="${hash:0:7}"
+    version="${hash}"
   else
     # otherwise use branch name, too
-    version="${branch}${HASH_SEPARATOR}${hash:0:7}"
+    version="${branch}${HASH_SEPARATOR}${hash}"
   fi
 
 elif test "${version%-[0-9]*-g[0-9a-f]*}" = "$version"; then
 # replace short tags if they don't match "long" pattern
 
   if test "${ALWAYS_LONG_VERSION}" = 'y'; then
-    version="${version}${REVISION_SEPARATOR}0${HASH_SEPARATOR}${hash:0:7}"
+    version="${version}${REVISION_SEPARATOR}0${HASH_SEPARATOR}${hash}"
   fi
 
 else
@@ -77,18 +86,19 @@ version="${version}${dirty}"
 # parse commandline argument
 case "$1" in
   '')
-    echo "${hash} ${version}" ;;
+    echo "${longhash} ${version}" ;;
   commit|hash)
-    echo "${hash}" ;;
+    echo "${longhash}" ;;
   version|describe)
     echo "${version}" ;;
   json)
+    esc() { printf "%s" "$1" | sed -E 's/["\\]/\\&/g'; }
     printf '{"version":"%s","commit":"%s"}\n' \
-      "${version//\"/\\\"}" "${hash//\"/\\\"}" ;;
+      "$(esc "${version}")" "$(esc "${longhash}")" ;;
   env)
     esc() { printf "%s" "$1" | sed "s/'/'\\\\''/g"; }
     printf "VERSION='%s'\nCOMMIT='%s'\n" \
-      "$(esc "${version}")" "$(esc "${hash}")" ;;
+      "$(esc "${version}")" "$(esc "${longhash}")" ;;
   *)
     printf '%s [version|commit|json|env]\n' "$0"; exit 1 ;;
 esac
