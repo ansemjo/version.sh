@@ -7,10 +7,10 @@ set -eu -o pipefail
 # - tagged commit vs. sometime after
 # - on branch tip vs. detached head
 
-export ALWAYS_LONG_VERSION="n"
-export REVISION_SEPARATOR="-"
-export HASH_SEPARATOR="-g"
-export DIRTY_MARKER="-dirty"
+export ALWAYS_LONG_VERSION="y"
+export REVISION_SEPARATOR=" r"
+export HASH_SEPARATOR=" "
+export DIRTY_MARKER=" dirty"
 
 compare() {
   echo -e "\033[32m> $1\033[0m"
@@ -19,7 +19,7 @@ compare() {
 }
 
 pwd=$PWD
-for script in version{,-simple,-modern}.sh; do
+for script in "${@-version.sh}"; do
   echo -e "\033[1;31m--- TESTING: $script ---\033[0m"
 
   # create a temporary directory and init a repository
@@ -55,6 +55,8 @@ for script in version{,-simple,-modern}.sh; do
   git checkout -q main
   git tag -a -m tagged 0.2 HEAD
   compare "tagged, branch tip"
+  echo >> version.sh
+  compare "tagged, branch tip, dirty"
 
   # clean up before next script
   cd /tmp && rm -rf "$tmp"
