@@ -147,6 +147,62 @@ To summarize, only annotated tags / releases are absolutely guaranteed to be con
 
 ## build tool examples
 
+### Python with setuptools
+
+```python
+#!/usr/bin/env python
+
+import os
+from subprocess import check_output
+from setuptools import setup, find_packages
+
+os.environ["REVISION_SEPARATOR"] = ".post" # PEP 440 compatability
+os.environ["HASH_SEPARATOR"] = " " # for splitting
+cmd = check_output(["sh", "version.sh", "describe"]).strip() # => b'1.0.post1 g904b097'
+version = cmd.split()[0].decode() # => '1.0.post1'
+
+setup(
+    name="mypkg",
+    version=version,
+    packages=find_packages(),
+    ...
+)
+```
+
+### Go
+
+```go
+package main
+
+import "fmt"
+
+var version string
+
+func main() {
+  fmt.Println("hello version", version)
+}
+```
+
+```sh
+go run -ldflags "-X main.version=$(sh version.sh describe)" hello.go
+```
+
+### JavaScript
+
+This is a very terse example of a TypeScript project off the top of my head,
+where `yarn build` is used to compile to a JavaScript dist.
+
+```json
+{
+  "name": "myapp",
+  "scripts": {
+    "prebuild": "printf 'export const version = %s;\\n' \"$(sh version.sh json)\" > app/version.ts",
+    "build": "tsc",
+    ...
+  }
+}
+```
+
 ### C and Makefile
 
 ```c
@@ -189,44 +245,4 @@ Running `autoreconf && ./configure` will add to `config.h`:
 #define COMMIT "904b09789961440a2703fad36d9ddfe6533f9928"
 
 ...
-```
-
-### Python with setuptools
-
-```python
-#!/usr/bin/env python
-
-import os
-from subprocess import check_output
-from setuptools import setup, find_packages
-
-os.environ["REVISION_SEPARATOR"] = ".post" # PEP 440 compatability
-os.environ["HASH_SEPARATOR"] = " " # for splitting
-cmd = check_output(["sh", "version.sh", "describe"]).strip() # => b'1.0.post1 g904b097'
-version = cmd.split()[0].decode() # => '1.0.post1'
-
-setup(
-    name="mypkg",
-    version=version,
-    packages=find_packages(),
-    ...
-)
-```
-
-### Go
-
-```go
-package main
-
-import "fmt"
-
-var version string
-
-func main() {
-  fmt.Println("hello version", version)
-}
-```
-
-```sh
-go run -ldflags "-X main.version=$(sh version.sh describe)" hello.go
 ```
