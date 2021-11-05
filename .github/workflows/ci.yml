@@ -72,5 +72,5 @@ jobs:
           test $($SH ./version.sh describe) == $(git describe --dirty)
           # check dirty output
           echo "# dirty" >> version.sh
-          test $(GIT_DIRTY_MARKER=M $SH ./version.sh describe) == $(git describe --dirty=M)
+          test $(DIRTY_MARKER=M $SH ./version.sh describe) == $(git describe --dirty=M)
 

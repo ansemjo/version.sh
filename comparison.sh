@@ -29,7 +29,7 @@ for script in version{,-simple,-modern}.sh; do
   git checkout -b main -q
   git config --local advice.detachedHead false >/dev/null
   git config --local user.name testscript
-  git config --local user.email git@$HOSTNAME
+  git config --local user.email "git@$HOSTNAME"
 
   # copy the script and create a few commits
   cp "$pwd/$script" version.sh
