@@ -3,99 +3,92 @@
 # Copyright (c) 2018 Anton Semjonov
 # Licensed under the MIT License
 
-# This script prints version information for a project managed with Git when
-# executed in a shell. It works from checked-out repositories or downloaded
-# archives alike. For more information see https://github.com/ansemjo/version.sh
+# Print version information for a project manager with Git, working
+# both in a checked-out repository or an exported archive file.
+# For more information see: https://github.com/ansemjo/version.sh
 
-# -- SYNOPSIS -- Copy this script to your project root and add the line
-# 'version.sh export-subst' to your .gitattributes file, creating it if it does
-# not exist. Commit both files, try running 'sh ./version.sh' and use annotated
-# Git tags to track your versions.
+# tl;dr: copy script to your project and add "version.sh export-subst"
+# to your .gitattributes file, then commit both files and use annotated
+# tags for versioning
 
-# Ignore certain shellcheck warnings:
-# - '$Format..' looks like a variable in single-quotes but this is
-#     necessary so it does _not_ expand when interpreted by the shell
-# - backslash before a literal newline is a portable way
-#     to insert newlines with sed
-# shellcheck disable=SC2016,SC1004
+# Ignore shellcheck warnings for '$Format:..$', which looks
+# like a variable in single-quotes but isn't!
+# shellcheck disable=SC2016
 
-# Magic! These strings will be substituted by 'git archive':
-COMMIT='$Format:%H$'
-REFS='$Format:%D$'
+# configure some strings, use env if given
+ALWAYS_LONG_VERSION="${ALWAYS_LONG_VERSION-y}"
+REVISION_SEPARATOR="${REVISION_SEPARATOR--}"
+HASH_SEPARATOR="${HASH_SEPARATOR--g}"
+DIRTY_MARKER="${DIRTY_MARKER--dirty}"
 
-# Fallback values:
-FALLBACK_VERSION='commit'
-FALLBACK_COMMIT='unknown'
+if test '$Format:%%$' = '%'; then
+  # running from exported archive with replaced values
 
-# Revision and commit hash seperators in 'describe' string:
-REVISION_SEPERATOR="${REVISION_SEPERATOR--}"
-COMMIT_SEPERATOR="${COMMIT_SEPERATOR--g}"
-GIT_DIRTY_MARKER="${GIT_DIRTY_MARKER--dirty}"
+  hash='$Format:%H$'
+  refs='$Format:%D$'
+  # parse the reflist in %D to get a tag and/or branch name
+  #! this will NOT pick up valid local branch names with '/' in them
+  version=$(echo "${refs}" | sed -ne 's/.*tag: \([^,]*\).*/\1/p')
+  branch=$(echo "${refs}" | sed -E -ne 's/(HEAD -> |,)//' -e 's/^(.* )?([a-z0-9._-][a-z0-9._-]*)( .*)?$/\2/p')
+  dirty=''
 
-# Check if variables contain substituted values?
-subst() { test -n "${COMMIT##\$Format*}" && test -n "${REFS##\$Format*}"; }
+else
+  # otherwise hopefully a live git repo
 
-# Check if git and repository information is available?
-hasgit() {
-  command -v git >/dev/null && { test -r .git || git rev-parse 2>/dev/null; };
-}
+  git rev-parse >/dev/null || exit 1
+  hash=$(git log -1 --pretty='%H') || exit 1
+  version=$(git describe)
+  branch=$(git rev-parse --abbrev-ref HEAD)
+  dirty=$(git diff-index --quiet HEAD -- || printf '%s' "${DIRTY_MARKER}")
 
-# Parse the %D reflist in $REFS to get a tag or branch name:
-refparse() {
-  # try to find a tag:
-  tag=$(echo "$REFS" | sed -ne 's/.*tag: \([^,]*\).*/\1/p');
-    test -n "$tag" && echo "$tag" && return 0;
-  # try to find a branch name:
-  branch=$(echo "$REFS" | sed -e 's/HEAD -> //' -e 's/, /\
-/' | sed -ne '/^[a-z0-9._-]*$/p' | sed -n '1p');
-    test -n "$branch" && echo "$branch" && return 0;
-  # nothing found, no tags and not a branch tip?
-  return 1;
-}
+fi
 
-# Try to get commit and version information with git:
-gitcommit() {
-  hasgit && git describe --always --abbrev=0 --match '^$' 2>/dev/null;
-}
-gitversion() {
-  hasgit && {
-    {
-      # try to use 'describe':
-      V=$(git describe 2>/dev/null) && \
-      echo "$V" | sed 's/-\([0-9]*\)-g.*/'"$REVISION_SEPERATOR"'\1/';
-    } || {
-      # or count the number of commits otherwise:
-      C=$(git rev-list --count HEAD 2>/dev/null) && \
-      printf '0.0.0%s%s' "$REVISION_SEPERATOR" "$C";
-    };
-  };
-}
-gitdirty() {
-  if ! subst && hasgit; then
-    git diff --no-ext-diff --quiet --exit-code || echo "$GIT_DIRTY_MARKER";
+# reformat version string to somewhat match `git describe --always --long`
+# and use configured separators if any, then append dirty marker
+if test -z "${version}"; then
+# fill in empty versions
+
+  if test -z "${branch}" || test "${branch}" = 'HEAD'; then
+    # if not a branch tip, use only hash
+    version="${hash:0:7}"
+  else
+    # otherwise use branch name, too
+    version="${branch}${HASH_SEPARATOR}${hash:0:7}"
   fi
-}
 
-# Wrappers to return version and commit (substituted -> git info -> fallback):
-version() { subst && refparse || gitversion || echo "$FALLBACK_VERSION"; }
-commit()  { subst && echo "$COMMIT" || gitcommit || echo "$FALLBACK_COMMIT"; }
-describe() { printf '%s%s%.7s%s\n' "$(version)" "$COMMIT_SEPERATOR" "$(commit)" "$(gitdirty)"; }
+elif test "${version%-[0-9]*-g[0-9a-f]*}" = "$version"; then
+# replace short tags if they don't match "long" pattern
 
-# Parse commandline argument:
+  if test "${ALWAYS_LONG_VERSION}" = 'y'; then
+    version="${version}${REVISION_SEPARATOR}0${HASH_SEPARATOR}${hash:0:7}"
+  fi
+
+else
+
+  # reformat long versions with configured separators
+  v=$(echo "${version}" | sed -E 's/^(.*)-([0-9]+)-g([0-9a-f]+)$/\1/')
+  r=$(echo "${version}" | sed -E 's/^(.*)-([0-9]+)-g([0-9a-f]+)$/\2/')
+  h=$(echo "${version}" | sed -E 's/^(.*)-([0-9]+)-g([0-9a-f]+)$/\3/')
+  version="${v}${REVISION_SEPARATOR}${r}${HASH_SEPARATOR}${h}"
+
+fi
+version="${version}${dirty}"
+
+# parse commandline argument
 case "$1" in
-  version)  version ;;
-  commit)   commit ;;
-  describe) describe ;;
+  '')
+    echo "${hash} ${version}" ;;
+  commit|hash)
+    echo "${hash}" ;;
+  version|describe)
+    echo "${version}" ;;
   json)
-    printf '{"version":"%s","commit":"%s","describe":"%s"}\n' \
-      "$(version)" "$(commit)" "$(describe)" ;;
+    printf '{"version":"%s","commit":"%s"}\n' \
+      "${version//\"/\\\"}" "${hash//\"/\\\"}" ;;
   env)
     esc() { printf "%s" "$1" | sed "s/'/'\\\\''/g"; }
-    printf "VERSION='%s'\nCOMMIT='%s'\nDESCRIBE='%s'\n" \
-      "$(esc "$(version)")" "$(esc "$(commit)")" "$(esc "$(describe)")" ;;
-  help)
-    printf '%s [version|commit|describe|json|env]\n' "$0" ;;
+    printf "VERSION='%s'\nCOMMIT='%s'\n" \
+      "$(esc "${version}")" "$(esc "${hash}")" ;;
   *)
-    printf 'version  : %s\ncommit   : %s\ndescribe : %s\n' \
-      "$(version)" "$(commit)" "$(describe)" ;;
+    printf '%s [version|commit|json|env]\n' "$0"; exit 1 ;;
 esac
