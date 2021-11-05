@@ -12,8 +12,8 @@
 # tags for versioning
 
 # Ignore shellcheck warnings for '$Format:..$', which looks
-# like a variable in single-quotes but isn't!
-# shellcheck disable=SC2016
+# like a constant / variable in single-quotes but isn't!
+# shellcheck disable=SC2016,SC2050
 
 # configure some strings, use env if given
 ALWAYS_LONG_VERSION="${ALWAYS_LONG_VERSION-y}"

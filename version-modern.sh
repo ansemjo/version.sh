@@ -10,6 +10,10 @@
 # Note: this script requires Git version 2.32.0 or later.
 # tl;dr: add "version-modern.sh export-subst" to .gitattributes
 
+# Ignore shellcheck warnings for '$Format:..$', which looks
+# like a constant / variable in single-quotes but isn't!
+# shellcheck disable=SC2016,SC2050
+
 # configure some strings, use env if given
 ALWAYS_LONG_VERSION="${ALWAYS_LONG_VERSION-y}"
 REVISION_SEPARATOR="${REVISION_SEPARATOR--}"
@@ -21,6 +25,8 @@ if [[ '$Format:%%$' = '%' ]]; then
   # exported archive, replaced values
   hash='$Format:%H$'
   version='$Format:%(describe:exclude=*-[0-9]*-g[0-9a-f]*)$'
+  # TODO: safeguard / handle against old git version?
+  # TODO: useful: "%(describe:" is an invalid tag
   dirty=''
 else
   # otherwise hopefully a live git repo
