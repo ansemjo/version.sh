@@ -1,6 +1,6 @@
 # version.sh
 
-![GitHub Workflow](https://github.com/ansemjo/version.sh/actions/workflows/ci.yml/badge.svg)
+[![GitHub Workflow](https://github.com/ansemjo/version.sh/actions/workflows/ci.yml/badge.svg)](https://github.com/ansemjo/version.sh/actions/workflows/ci.yml)
 
 `version.sh` is a script to output "normalized" version strings of projects tracked with Git,
 e.g. for usage during software builds. Specifically, it aims to produce the same strings whether
