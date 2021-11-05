@@ -25,8 +25,10 @@ if [[ '$Format:%%$' = '%' ]]; then
   # exported archive, replaced values
   hash='$Format:%H$'
   version='$Format:%(describe:exclude=*-[0-9]*-g[0-9a-f]*)$'
-  # TODO: safeguard / handle against old git version?
-  # TODO: useful: "%(describe:" is an invalid tag
+  if [[ "${version:0:11}" = '%(describe:' ]]; then
+    echo "warning: exporting git was too old! version >= 2.32.0 required" >&2
+    version=""
+  fi
   dirty=''
 else
   # otherwise hopefully a live git repo

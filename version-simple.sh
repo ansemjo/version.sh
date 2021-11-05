@@ -7,7 +7,7 @@
 # both in a checked-out repository or an exported archive file.
 # For more information see: https://github.com/ansemjo/version.sh
 
-# Note: this script requires Git version 2.32.0 or later.
+# Note: this script needs Git version 2.32.0 or later to run properly.
 # tl;dr: add "version-simple.sh export-subst" to .gitattributes
 
 # Ignore shellcheck warnings for '$Format:..$', which looks
@@ -19,8 +19,10 @@ if [[ '$Format:%%$' = '%' ]]; then
   # exported archive, replaced values
   hash='$Format:%H$'
   version='$Format:%(describe:exclude=*-[0-9]*-g[0-9a-f]*)$'
-  # TODO: safeguard / handle against old git version?
-  # TODO: useful: "%(describe:" is an invalid tag
+  if [[ "${version:0:11}" = '%(describe:' ]]; then
+    echo "warning: exporting git was too old! version >= 2.32.0 required" >&2
+    version=""
+  fi
 else
   # otherwise hopefully a live git repo
   git rev-parse >/dev/null || exit 1
