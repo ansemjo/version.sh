@@ -2,18 +2,23 @@
 
 ![GitHub Workflow](https://github.com/ansemjo/version.sh/actions/workflows/ci.yml/badge.svg)
 
-`version.sh` is a script to output normalized version strings of projects tracked with Git for usage
-during software builds. Specifically, it aims to produce the same strings whether you are building
-from a checked-out tag of a cloned repository or a downloaded archive of that same tag.
+`version.sh` is a script to output "normalized" version strings of projects tracked with Git,
+e.g. for usage during software builds. Specifically, it aims to produce the same strings whether
+you are working from a cloned repository or a downloaded archive of it.
 
-## UPDATE 2021-06
+## tl;dr:
 
-Git 2.32 has [learned a new trick](https://raw.githubusercontent.com/git/git/master/Documentation/RelNotes/2.32.0.txt):
-thanks to [Eli Schwartz and René Scharfe](https://www.spinics.net/lists/git/msg398884.html), the `git log --format=...`
-(and as such also the `export-subst` attribute) now handles `%(describe)` placeholders! This means all of the things
-below can now be applied to archives of a commit that are *not* exactly a release! Implementation in this script TBA.
+```bash
+[install, see below ...]
+$ git describe
+1.0-1-g904b097
+$ bash version.sh describe
+1.0-1-g904b097
+$ git archive HEAD | tar -x --to-stdout version.sh | bash /dev/stdin describe
+1.0-1-g904b097
+```
 
-## THE PROBLEM
+## what's the problem?
 
 The problem with embedding consistent versions from a single "source of truth" is described a little
 further in
@@ -22,117 +27,141 @@ short: you don't have the `.git` directory in downloaded archives and therefore 
 version information with Git. Furthermore you might not want to have Git as a requirement when
 building your software if all you really need is a small makefile or a single `go build` command,
 etc. But then you need a seperate workflow for updating e.g. a `VERSION` file and need to track that
-in your repository ..
+in your repository.
 
 This can be solved by adding an entry like `VERSION export-subst` to the project's `.gitattributes`
 file and using [`$Format:__$` strings](https://git-scm.com/docs/gitattributes#_creating_an_archive)
-that will be substituted upon archive creation. The script goes a step further still:
+that will be substituted upon archive creation. However, that simple approach only works when you're
+working from an extracted archive and the possible format-strings are rather limited.
+Git has recently [learned a new trick](https://raw.githubusercontent.com/git/git/master/Documentation/RelNotes/2.32.0.txt)
+and you can now use `%(describe)` placeholders, which mimic `git describe` very well, even when the exported archive
+is not *exactly* a tagged release.
 
-- If we are working on a cloned repository, those strings will not be substituted but `./.git` will
-  exist and the script will attempt to use `git describe ...` commands.
+The `version.sh` script attempts to combine both worlds:
 
-- If you are working on a downloaded copy, which was created with `git archive` (e.g. GitHub
-  downloads), the strings will have been substituted and the script will simply parse and echo
-  those - no `git` required.
+- If working in a cloned repository, those format-strings will not be substituted but the `.git`
+  directory will exist and normal Git commands can be used.
 
-I tried to stay POSIX compliant and portable, so you should be able to execute the script with any
-shell implementation, given that commands like `sed`, `test` and `printf` are available. This also
-means that build tools like `make` or Python's `setuptools` should trivially be able to use
-`version.sh`'s output during builds. If you find a shell where it does not work, please open an
-issue. The workflow [currently tests](https://github.com/ansemjo/version.sh/actions/workflows/ci.yml)
-`bash`, `dash` and `ksh` on Linux and OSX.
+- If working on an extracted archive, which was created with `git archive` (e.g. GitHub source downloads),
+  the format-strings will have been substituted and the script will attempt to parse those – no `git` required.
 
-## INSTALLATION
 
-Copy `version.sh` to your project directory and add the following line to your
-[`.gitattributes`](https://git-scm.com/docs/gitattributes):
+
+## installation
+
+Copy `version.sh` to your repository and add the following line to your
+[`.gitattributes`](https://git-scm.com/docs/gitattributes) file, creating it if it does not exist:
 
 ```
 version.sh export-subst
 ```
 
-Now commit both files and try running `sh version.sh`!
+Add and commit both files and try running `sh version.sh`.
 
 Scripted installation for copy-pasting:
 
 ```
-cd path/to/your/project
-curl -LO https://github.com/ansemjo/version.sh/raw/master/version.sh
+curl -LO https://github.com/ansemjo/version.sh/raw/main/version.sh
 echo 'version.sh export-subst' >> .gitattributes
-git add version.sh .gitattributes
-git commit -m 'begin using ansemjo/version.sh'
+git add version.sh .gitattributes && git commit -m 'use ansemjo/version.sh'
 ```
 
-## USAGE
+I tried to stay POSIX compliant and portable with `version.sh`, so you should be able to execute the script with any
+compliant shell implementation, given that some basic commands like `sed`, `test` and `printf` are available. This also
+means that build tools like `make` or Python's `setuptools` should trivially be able to use its output during builds.
+The [`ci` workflow](https://github.com/ansemjo/version.sh/actions/workflows/ci.yml) currently tests
+`bash`, `dash` and `ksh` on Linux and OSX.
 
-The script takes the following arguments: nothing/`print`, `version`, `commit`, `describe`, `json`
+A greatly simplified, less configurable, but modern implementation is found in `version-simple.sh`. It requires
+`bash` and a Git version of at least 2.32.0 because it uses the `%(describe)` string mentioned above. *Note that
+this includes any server-side binaries as well! I.e. if your project is hosted on GitHub you shouldn't use it
+yet because GitHub's `git` does not support this as of now (2021-11).*
+
+
+
+## usage
+
+The script optionally takes one argument: `describe`, `commit`, `json` or `env`.
 
 ```
-$ sh version.sh
-version : 0.1.1-6
-commit  : d2dcc2b48f4a3993eea1bbbd4e0419825c2b5875-dirty
-
-$ sh version.sh version
-0.1.1-6
-
-$ sh version.sh commit
-d2dcc2b48f4a3993eea1bbbd4e0419825c2b5875-dirty
+$ sh version.sh 
+904b09789961440a2703fad36d9ddfe6533f9928 1.0-1-g904b097
 
 $ sh version.sh describe
-0.1.1-6-gd2dcc2b
+1.0-1-g904b097
 
-$ sh version.sh json | jq .
-{
-  "version": "0.1.1-6",
-  "commit": "d2dcc2b48f4a3993eea1bbbd4e0419825c2b5875-dirty",
-  "describe":"0.1.1-6-gd2dcc2b"
-}
+$ sh version.sh commit
+904b09789961440a2703fad36d9ddfe6533f9928
+
+$ sh version.sh json
+{"version":"1.0-1-g904b097","commit":"904b09789961440a2703fad36d9ddfe6533f9928"}
+
+$ sh version.sh env
+VERSION='1.0-1-g904b097'
+COMMIT='904b09789961440a2703fad36d9ddfe6533f9928'
+
 ```
 
-You can configure the version strings with `REVISION_SEPERATOR` and `COMMIT_SEPERATOR`:
+You can configure the version string with a few environment variables:
+
+| env | default | description |
+| --- | ------- | ----------- |
+| `REVISION_SEPARATOR` | `-` | separator for the "commits since tag" counter |
+| `HASH_SEPARATOR` | `-g` | separator before the commit hash at the end |
+| `DIRTY_MARKER` | `-dirty` | added when working in a dirty clone |
+| `ALWAYS_LONG_VERSION` | `y` | always format a long string, even if exactly on a tagged commit (`y`/`n`)
+
+**Note**: previous versions contained a typo in the variable names, so they have changed!
+
+ For example, a slightly customized version format might look like this:
 
 ```
-$ REVISION_SEPERATOR=.r COMMIT_SEPERATOR=.commit- sh version.sh describe
-0.2.1.r4.commit-1f80826
+$ export REVISION_SEPARATOR=" rev"
+$ export HASH_SEPARATOR=" #"
+$ sh version.sh describe
+1.0 rev1 #904b097
 ```
 
-Some usage examples with common build tools follow below.
+Some common usage examples with a few build tools follow below.
 
-## SPECIAL CASES
+## edge cases
 
-On the one hand the format strings that can be used with `export-subst` are limited. On the other
-hand a cloned repository allows for some more specific information. Thus a few special cases arise:
+With a modern Git (see above) the script should almost always produce identical output
+from cloned repositories and extracted archives, which will be similar to `git describe --always --long`.
+However, most Gits today will have a few edge cases, where different strings are produced because
+the information that can be gained from the format-strings is limited:
 
-| workdir    | condition                                                            | effect                                                                                                             |
-| ---------- | -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| archive    | not a tagged release, but is a tip of a branch, e.g. `master.tar.gz` | `$REFS` will contain something like `HEAD -> master` and version will be parsed as `master` in this case           |
-| archive    | neither a tagged release nor a current tip of a branch               | `$REFS` is empty and version will default to `FALLBACK_VERSION`, which is currently defined as the string `commit` |
-| repository | modified but uncommitted files present                               | appended `-dirty` after the commit hash                                                                            |
-| repository | `HEAD` is a few commits after the last annotated tag                 | the version string will contain an appended `-X` where `X` is the number of commits after the last tag             |
-| repository | no annotated tags in history                                         | version will default to `0.0.0-X` where `X` is the total number of commits                                         |
+| where | condition | effect |
+| ----- | --------- | ------ |
+| archive | not exactly a tagged release, but is a tip of a branch, e.g. `main.zip` | `$REFS` will contain something like `HEAD -> main` and version will be formatted like `main-g904b097` |
+| archive | not exactly a tagged release, nor a tip of a branch⁺ | no information available at all, version will the short commit hash `904b097` |
+| cloned | no annotated tags in history, detached `HEAD`⁺ | no information available at all, version will the short commit hash `904b097` |
+| cloned | no annotated tags in history, branch tip | version will be formatted like a branch archive: `main-g904b097` |
+| cloned | modified files present | appended dirty marker after the commit hash: `1.0-1-g904b097-dirty` |
 
-All in all, only annotated tags / releases are really consistent between the cloned repository and a
-downloaded archive.
+⁺) Note that in an extracted archive you cannot distinguish whether it's just *not exactly* a tagged release or *there are no tags at all*, so the output will actually be identical to a detached `HEAD` with not tags at all.
 
-## BUILD TOOL INTEGRATION
+To summarize, only annotated tags / releases are absolutely guaranteed to be consistent between the cloned repository and a downloaded archive.
 
-### C + Makefile
+
+
+## build tool examples
+
+### C and Makefile
 
 ```c
 #include <stdio.h>
 
 int main() {
-  printf("Hello, World!\n");
-  printf("version: %s\ncommit: %s\n", VERSION, COMMIT);
+  printf("My version: %s\ncommit: %s\n", VERSION, COMMIT);
   return(0);
 }
 ```
 
 ```makefile
-VERSION := $(shell ./version.sh version)
-COMMIT  := $(shell ./version.sh commit)
-
-CFLAGS := $(CFLAGS) -DVERSION="\"$(VERSION)\"" -DCOMMIT="\"$(COMMIT)\""
+VERSION := $(shell sh version.sh describe)
+COMMIT  := $(shell sh version.sh commit)
+CFLAGS  := $(CFLAGS) -DVERSION="\"$(VERSION)\"" -DCOMMIT="\"$(COMMIT)\""
 
 hello: hello.c
 	gcc $(CFLAGS) $< -o $@
@@ -142,7 +171,7 @@ hello: hello.c
 
 ```
 ...
-AC_INIT([myprogram], [m4_esyscmd_s([sh version.sh version])])
+AC_INIT([myprogram], [m4_esyscmd_s([sh version.sh describe])])
 AC_CONFIG_HEADERS([config.h])
 AC_DEFINE_UNQUOTED([COMMIT], "`sh version.sh commit`", "Git commit from which we build")
 ...
@@ -154,25 +183,27 @@ Running `autoreconf && ./configure` will add to `config.h`:
 ...
 
 /* Version number of package */
-#define VERSION "*****"
+#define VERSION "1.0-1-g904b097"
 
 /* "Git commit from which we build" */
-#define COMMIT "****************************************"
+#define COMMIT "904b09789961440a2703fad36d9ddfe6533f9928"
 
 ...
 ```
 
-### Python + setuptools
+### Python with setuptools
 
 ```python
 #!/usr/bin/env python
 
-from os import environ
+import os
 from subprocess import check_output
 from setuptools import setup, find_packages
 
-environ['REVISION_SEPERATOR'] = '.post' # PEP 440 compatability
-version = check_output(['sh', 'version.sh', 'version']).strip().decode()
+os.environ["REVISION_SEPARATOR"] = ".post" # PEP 440 compatability
+os.environ["HASH_SEPARATOR"] = " " # for splitting
+cmd = check_output(["sh", "version.sh", "describe"]).strip() # => b'1.0.post1 g904b097'
+version = cmd.split()[0].decode() # => '1.0.post1'
 
 setup(
     name="mypkg",
@@ -189,20 +220,13 @@ package main
 
 import "fmt"
 
-var commit string
 var version string
 
 func main() {
-
   fmt.Println("hello version", version)
-
-  if commit != "" {
-    fmt.Println("commit:", commit)
-  }
-
 }
 ```
 
 ```sh
-go run -ldflags "-X main.version=$(sh version.sh version) -X main.commit=$(sh version.sh commit)" hello.go
+go run -ldflags "-X main.version=$(sh version.sh describe)" hello.go
 ```
