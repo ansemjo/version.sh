@@ -25,19 +25,21 @@ if test '$Format:%%$' = '%'; then
   # running from exported archive with replaced values
 
   longhash='$Format:%H$'
-  hash=$(echo "$longhash" | head -c7)
+  hash=$(echo "${longhash}" | head -c7)
   refs='$Format:%D$'
   desc='$Format:%(describe:exclude=*-[0-9]*-g[0-9a-f]*)$'
   dirty=''
 
+  # parse the reflist in %D to hopefully get tag and branch names
+  #! this will NOT pick up valid local branch names with '/' in them
+  tag=$(echo "${refs}" | sed -ne 's/.*tag: \([^,]*\).*/\1/p')
+  branch=$(echo "${refs}" | sed -E -ne 's/(HEAD -> |,)//' -e 's/^(.* )?([a-z0-9._-][a-z0-9._-]*)( .*)?$/\2/p')
+
+  # use desc if the git was modern enough
   if test "$(printf '%s' "$desc" | head -c11)" != "%(describe:"; then
-    # use desc if the git was modern enough
     version="${desc}"
   else
-    # otherwise parse the reflist in %D to hopefully get tag and branch names
-    #! this will NOT pick up valid local branch names with '/' in them
-    version=$(echo "${refs}" | sed -ne 's/.*tag: \([^,]*\).*/\1/p')
-    branch=$(echo "${refs}" | sed -E -ne 's/(HEAD -> |,)//' -e 's/^(.* )?([a-z0-9._-][a-z0-9._-]*)( .*)?$/\2/p')
+    version="${tag}"
   fi
 
 else
@@ -45,7 +47,7 @@ else
 
   git rev-parse >/dev/null || exit 1
   longhash=$(git log -1 --pretty='%H') || exit 1
-  hash=$(echo "$longhash" | head -c7)
+  hash=$(echo "${longhash}" | head -c7)
   version=$(git describe --exclude='*-[0-9]*-g[0-9a-f]*')
   branch=$(git rev-parse --abbrev-ref HEAD)
   dirty=$(git diff-index --quiet HEAD -- || printf '%s' "${DIRTY_MARKER}")
@@ -54,8 +56,8 @@ fi
 
 # reformat version string to somewhat match `git describe --always --long`
 # and use configured separators if any, then append dirty marker
-if test -z "${version}"; then
-# fill in empty versions
+if test -z "${version}" || test "${version}" = "${hash}"; then
+# fill in "empty" versions
 
   if test -z "${branch}" || test "${branch}" = 'HEAD'; then
     # if not a branch tip, use only hash
