@@ -13,7 +13,7 @@ jobs:
       - name: Run ShellCheck
         uses: ludeeus/action-shellcheck@1.1.0
 
-  # check correctness with some shells
+  # check correctness with different shells
   correctness:
     runs-on: ${{ matrix.os }}
     strategy:
@@ -44,33 +44,35 @@ jobs:
 
       - name: Prepare dummy release
         run: |
+          # create a dummy commit and tag a release
           echo 'version.sh export-subst' > .gitattributes
           git config --global user.name "GitHub Action"
           git config --global user.email "runner@$HOSTNAME"
           git add .gitattributes
-          git commit -m 'ci'
-          echo git tag -a ci-${{ github.run_id }} -m 'ci'
-          git tag -a ci-${{ github.run_id }} -m 'ci'
+          git commit -m dummy
+          git tag -a ci-${{ github.run_id }} -m dummy
+          git log -1 --pretty=oneline
 
       - name: Test correctness
         env:
           SH: ${{ matrix.sh }}
+          ALWAYS_LONG_VERSION: "n"
+          DIRTY_MARKER: "M"
         run: |
           # check that commands in git repository return expected results
           set -x
-          $SH ./version.sh json
-          export ALWAYS_LONG_VERSION=n
+          $SH ./version.sh
           test $($SH ./version.sh version) == ci-${{ github.run_id }}
           test $($SH ./version.sh commit) == $(git rev-parse HEAD)
           # work from a source tarball and check that it produces identical output
           cd $(mktemp -d)
-          git -C $GITHUB_WORKSPACE archive HEAD | tar xv
+          git -C $GITHUB_WORKSPACE archive HEAD | tar x
           test "$($SH ./version.sh json)" == "$(cd $GITHUB_WORKSPACE && $SH ./version.sh json)"
           # back to repository and add a commit
           cd $GITHUB_WORKSPACE
-          git commit --allow-empty -m 'edit'
-          test $($SH ./version.sh describe) == $(git describe --dirty)
+          git commit --allow-empty -m "another dummy"
+          test $($SH ./version.sh describe) == $(git describe)
           # check dirty output
           echo "# dirty" >> version.sh
-          test $(DIRTY_MARKER=M $SH ./version.sh describe) == $(git describe --dirty=M)
+          test $($SH ./version.sh describe) == $(git describe --dirty=$DIRTY_MARKER)
 
