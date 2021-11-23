@@ -74,8 +74,8 @@ The [`ci` workflow](https://github.com/ansemjo/version.sh/actions/workflows/ci.y
 
 A greatly simplified, less configurable, but modern implementation is found in `version-simple.sh`. It requires
 `bash` and a Git version of at least 2.32.0 because it uses the `%(describe)` string mentioned above. *Note that
-this includes any server-side binaries as well! I.e. if your project is hosted on GitHub you shouldn't use it
-yet because GitHub's `git` does not support this as of now (2021-11).*
+this includes any server-side binaries as well! I.e. check if your repository host supports this!*
+As of 2021-11-23 I have verified that GitHub does support it.
 
 
 
